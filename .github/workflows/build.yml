@@ -1,0 +1,47 @@
+# Build Maven + exécution de tous les tests (unitaires et intégration Testcontainers)
+# à chaque push, sur toutes les branches, et à chaque pull request.
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:   # lancement manuel depuis l'onglet Actions
+
+# Un nouveau push sur la même branche annule le build précédent encore en cours.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: mvn verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Java 17 (Temurin) + cache Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # Docker est déjà installé sur les runners ubuntu-latest : Testcontainers
+      # y démarre le PostgreSQL des tests d'intégration.
+      - name: Build et tests
+        run: mvn -B -ntp verify
+
+      - name: Rapports de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports-tests
+          path: target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 14
