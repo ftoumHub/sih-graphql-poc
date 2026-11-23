@@ -1,0 +1,26 @@
+# Annulation d'un séjour
+# Variables :
+#   {
+#     "entree": {
+#       "sejourId": 15
+#     }
+#   }
+mutation Annuler($entree: AnnulationSejourInput!) {
+  annulerSejour(entree: $entree) {
+    __typename
+    ... on Sejour {
+      numeroSejour
+      statut
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

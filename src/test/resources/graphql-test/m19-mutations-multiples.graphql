@@ -1,0 +1,31 @@
+# Plusieurs mutations dans une requête : exécutées en SÉRIE, dans l'ordre
+# Variables :
+#   {
+#     "ippA": "00020002",
+#     "ippB": "00020003"
+#   }
+mutation DeuxPatients($ippA: IPP!, $ippB: IPP!) {
+  premier: creerPatient(entree: { ipp: $ippA, nomNaissance: "Lopez", prenom: "Ana", dateNaissance: "1999-09-09", sexe: F }) {
+    ... on Patient {
+      id
+      ipp
+    }
+    ...Erreur
+  }
+  second: creerPatient(entree: { ipp: $ippB, nomNaissance: "Lopez", prenom: "Juan", dateNaissance: "1997-07-07", sexe: M }) {
+    ... on Patient {
+      id
+      ipp
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

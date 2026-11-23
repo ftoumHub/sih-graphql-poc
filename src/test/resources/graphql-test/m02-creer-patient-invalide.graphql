@@ -1,0 +1,22 @@
+# Bean Validation : ErreurMetier VALIDATION avec un détail par champ
+mutation CreerPatientInvalide {
+  creerPatient(entree: {
+    ipp: "00029999"
+    nomNaissance: "   "
+    prenom: ""
+    dateNaissance: "2099-01-01"
+    sexe: M
+  }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

@@ -1,0 +1,48 @@
+# --- Maven ----------------------------------------------------------------
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Java -----------------------------------------------------------------
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+# --- IntelliJ IDEA --------------------------------------------------------
+# On ne versionne que le style de code partagé ; le reste est propre au poste.
+.idea/*
+!.idea/codeStyles/
+*.iml
+*.ipr
+*.iws
+out/
+
+# --- Eclipse / VS Code ----------------------------------------------------
+.classpath
+.project
+.settings/
+.factorypath
+bin/
+.vscode/
+
+# --- Claude Code ----------------------------------------------------------
+# Les skills (.claude/skills/) sont partagés ; les réglages locaux ne le sont pas.
+.claude/settings.local.json
+
+# --- Secrets / environnement local ----------------------------------------
+.env
+.env.*
+
+# --- Systèmes d'exploitation ----------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.Zone.Identifier

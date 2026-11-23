@@ -1,0 +1,14 @@
+# N+1 (sejourEnCours) contre batch loading (sejours) : comparer les logs SQL
+query NPlusUn {
+  patients(taille: 12) {
+    contenu {
+      nomAffiche
+      sejourEnCours {
+        numeroSejour
+      }
+      sejours {
+        numeroSejour
+      }
+    }
+  }
+}

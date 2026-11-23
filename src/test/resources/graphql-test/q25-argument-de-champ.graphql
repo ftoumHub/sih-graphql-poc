@@ -1,0 +1,13 @@
+# Argument sur un champ imbriqué + alias
+query DocumentsDuPatient {
+  patient(id: 1) {
+    lettres: documents(type: LETTRE_DE_LIAISON) {
+      titre
+      statut
+    }
+    tous: documents {
+      type
+      titre
+    }
+  }
+}

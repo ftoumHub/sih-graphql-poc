@@ -1,0 +1,6 @@
+# Syntaxe raccourcie : query anonyme, un seul champ
+{
+  patient(id: 1) {
+    prenom
+  }
+}

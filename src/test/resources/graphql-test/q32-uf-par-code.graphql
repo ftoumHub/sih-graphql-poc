@@ -1,0 +1,13 @@
+# Une UF par code
+query Uf {
+  uniteFonctionnelle(code: "4101") {
+    libelle
+    capacite
+    tauxOccupation
+    sejoursEnCours {
+      numeroSejour
+      motif
+      dureeJours
+    }
+  }
+}

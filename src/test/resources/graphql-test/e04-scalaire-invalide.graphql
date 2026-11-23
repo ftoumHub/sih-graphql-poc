@@ -1,0 +1,6 @@
+# Erreur de scalaire : date au mauvais format
+query ScalaireInvalide {
+  patients(filtre: { neApres: "12/03/1948" }) {
+    infoPage { totalElements }
+  }
+}

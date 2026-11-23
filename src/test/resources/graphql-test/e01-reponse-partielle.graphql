@@ -1,0 +1,9 @@
+# Réponse partielle : une erreur sur un champ n'empêche pas les autres
+query ReponsePartielle {
+  patient(id: 1) {
+    prenom
+  }
+  recherche(texte: "a") {
+    __typename
+  }
+}

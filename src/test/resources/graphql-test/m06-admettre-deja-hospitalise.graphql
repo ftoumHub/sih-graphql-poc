@@ -1,0 +1,16 @@
+# Règle métier : un seul séjour hospitalier en cours par patient
+mutation DejaHospitalise {
+  admettrePatient(entree: { patientId: 1, type: HOSPITALISATION_COMPLETE, ufCode: "1201" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

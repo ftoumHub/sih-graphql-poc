@@ -1,0 +1,23 @@
+# Règle métier : sortie impossible sans lettre de liaison validée
+# Variables :
+#   {
+#     "sejourId": 12
+#   }
+mutation SortieSansLettre($sejourId: ID!) {
+  sortirPatient(entree: { sejourId: $sejourId, modeSortie: DOMICILE }) {
+    __typename
+    ... on Sejour {
+      statut
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

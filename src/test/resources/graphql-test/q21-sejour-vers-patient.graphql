@@ -1,0 +1,18 @@
+# Navigation inverse : du séjour vers le patient
+query SejourEtPatient {
+  sejour(id: 3) {
+    numeroSejour
+    motif
+    estEnCours
+    patient {
+      nomAffiche
+      prenom
+      age
+    }
+    ufCourante {
+      code
+      libelle
+      service
+    }
+  }
+}

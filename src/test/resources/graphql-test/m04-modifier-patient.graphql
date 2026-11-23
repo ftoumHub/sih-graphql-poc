@@ -1,0 +1,31 @@
+# Modification partielle (seuls les champs fournis)
+# Variables :
+#   {
+#     "entree": {
+#       "patientId": 13,
+#       "nomUsage": "Martin",
+#       "telephone": "0699887766"
+#     }
+#   }
+mutation ModifierPatient($entree: ModifierPatientInput!) {
+  modifierPatient(entree: $entree) {
+    __typename
+    ... on Patient {
+      id
+      nomNaissance
+      nomUsage
+      nomAffiche
+      telephone
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

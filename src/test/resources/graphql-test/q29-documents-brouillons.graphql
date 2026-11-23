@@ -1,0 +1,19 @@
+# Documents en brouillon à valider (avec séjour et patient)
+query Brouillons {
+  documents(filtre: { statut: BROUILLON }) {
+    infoPage { totalElements }
+    contenu {
+      id
+      type
+      titre
+      auteur
+      dateCreation
+      sejour {
+        numeroSejour
+      }
+      patient {
+        nomAffiche
+      }
+    }
+  }
+}

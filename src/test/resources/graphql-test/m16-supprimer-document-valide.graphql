@@ -1,0 +1,16 @@
+# Règle métier : un document validé n'est pas supprimable
+mutation SupprimerValide {
+  supprimerDocument(entree: { documentId: 1 }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

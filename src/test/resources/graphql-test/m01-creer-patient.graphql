@@ -1,0 +1,36 @@
+# Création d'un patient (union ResultatPatient)
+# Variables :
+#   {
+#     "entree": {
+#       "ipp": "00020001",
+#       "nomNaissance": "Durand",
+#       "prenom": "Alice",
+#       "dateNaissance": "1980-04-15",
+#       "sexe": "F",
+#       "telephone": "0611223344"
+#     }
+#   }
+mutation CreerPatient($entree: CreerPatientInput!) {
+  creerPatient(entree: $entree) {
+    __typename
+    ... on Patient {
+      id
+      ipp
+      nomNaissance
+      nomAffiche
+      prenom
+      age
+      dateCreation
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

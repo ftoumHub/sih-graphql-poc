@@ -1,0 +1,8 @@
+# Introspection : valeurs d'une énumération
+query IntrospectionEnum {
+  __type(name: "TypeDocument") {
+    enumValues {
+      name
+    }
+  }
+}

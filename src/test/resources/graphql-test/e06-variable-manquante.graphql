@@ -1,0 +1,6 @@
+# Variable obligatoire non fournie
+query VariableManquante($id: ID!) {
+  patient(id: $id) {
+    prenom
+  }
+}

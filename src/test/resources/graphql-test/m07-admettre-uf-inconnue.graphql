@@ -1,0 +1,20 @@
+# Ressource introuvable : UF inconnue
+# Variables :
+#   {
+#     "patientId": 10
+#   }
+mutation UfInconnue($patientId: ID!) {
+  admettrePatient(entree: { patientId: $patientId, type: URGENCES, ufCode: "9999" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

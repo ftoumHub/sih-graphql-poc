@@ -1,0 +1,6 @@
+# Patient inexistant : null, pas d'erreur
+query PatientInexistant {
+  patient(id: 9999) {
+    id
+  }
+}

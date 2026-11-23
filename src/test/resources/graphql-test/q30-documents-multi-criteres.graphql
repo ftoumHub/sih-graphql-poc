@@ -1,0 +1,13 @@
+# Filtre sur une liste d'énumérations + auteur
+query DocumentsMultiCriteres {
+  documents(filtre: { types: [LETTRE_DE_LIAISON, ORDONNANCE], auteur: "durand" }) {
+    infoPage { totalElements }
+    contenu {
+      type
+      titre
+      auteur
+      validePar
+      dateValidation
+    }
+  }
+}

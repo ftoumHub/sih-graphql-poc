@@ -1,0 +1,8 @@
+# Introspection : toutes les opérations disponibles
+query OperationsDisponibles {
+  __schema {
+    queryType { fields { name } }
+    mutationType { fields { name } }
+    subscriptionType { fields { name } }
+  }
+}

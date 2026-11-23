@@ -1,0 +1,15 @@
+# Parcours du patient dans l'hôpital (urgences -> USIC -> cardio)
+query Parcours {
+  sejour(id: 1) {
+    numeroSejour
+    mouvements {
+      type
+      dateMouvement
+      uniteFonctionnelle {
+        code
+        libelle
+        service
+      }
+    }
+  }
+}

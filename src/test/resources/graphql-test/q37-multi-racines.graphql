@@ -1,0 +1,18 @@
+# Plusieurs racines dans une même requête (écran d'accueil)
+query EcranAccueil {
+  statistiques {
+    nombreSejoursEnCours
+  }
+  brouillons: documents(filtre: { statut: BROUILLON }, taille: 3) {
+    infoPage { totalElements }
+    contenu {
+      titre
+    }
+  }
+  urgences: uniteFonctionnelle(code: "3001") {
+    sejoursEnCours {
+      numeroSejour
+      motif
+    }
+  }
+}

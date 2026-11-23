@@ -1,0 +1,6 @@
+# Un seul indicateur : une seule requête SQL exécutée
+query UnIndicateur {
+  statistiques {
+    nombrePatients
+  }
+}

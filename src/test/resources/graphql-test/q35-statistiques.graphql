@@ -1,0 +1,20 @@
+# Tableau de bord : toutes les statistiques
+query Statistiques {
+  statistiques {
+    nombrePatients
+    nombreSejoursEnCours
+    dureeMoyenneSejoursClosJours
+    occupationParUf {
+      ufCode
+      libelle
+      capacite
+      patientsPresents
+      tauxOccupation
+    }
+    documentsParTypeEtStatut {
+      type
+      statut
+      nombre
+    }
+  }
+}

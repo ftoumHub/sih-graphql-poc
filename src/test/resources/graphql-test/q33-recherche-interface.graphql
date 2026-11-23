@@ -1,0 +1,23 @@
+# Recherche transverse : interface Noeud + fragments inline
+# Variables :
+#   {
+#     "texte": "cardi"
+#   }
+query Recherche($texte: String!) {
+  recherche(texte: $texte, limiteParType: 10) {
+    __typename
+    id
+    ... on Patient {
+      nomAffiche
+      prenom
+    }
+    ... on Sejour {
+      numeroSejour
+      motif
+    }
+    ... on Document {
+      type
+      titre
+    }
+  }
+}

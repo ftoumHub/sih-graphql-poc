@@ -1,0 +1,16 @@
+# Directives @include / @skip pilotées par variables
+# Variables :
+#   {
+#     "avecSejours": true,
+#     "sansTelephone": true
+#   }
+query Directives($avecSejours: Boolean!, $sansTelephone: Boolean!) {
+  patient(id: 1) {
+    prenom
+    telephone @skip(if: $sansTelephone)
+    sejours @include(if: $avecSejours) {
+      numeroSejour
+      statut
+    }
+  }
+}

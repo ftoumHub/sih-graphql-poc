@@ -1,0 +1,29 @@
+# Validation d'un document
+# Variables :
+#   {
+#     "entree": {
+#       "documentId": 24,
+#       "validePar": "Dr Nadia Benali"
+#     }
+#   }
+mutation Valider($entree: ValidationDocumentInput!) {
+  validerDocument(entree: $entree) {
+    __typename
+    ... on Document {
+      id
+      statut
+      dateValidation
+      validePar
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

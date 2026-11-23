@@ -1,0 +1,16 @@
+# Règle métier : mutation vers l'UF courante
+mutation MemeUf {
+  muterPatient(entree: { sejourId: 3, ufDestination: "2101" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

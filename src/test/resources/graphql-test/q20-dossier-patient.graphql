@@ -1,0 +1,38 @@
+# Dossier patient complet : séjours, mouvements, documents
+# Variables :
+#   {
+#     "id": 1
+#   }
+query DossierPatient($id: ID!) {
+  patient(id: $id) {
+    nomAffiche
+    prenom
+    age
+    sejours {
+      numeroSejour
+      type
+      statut
+      motif
+      dateEntree
+      dateSortie
+      dureeJours
+      ufCourante {
+        code
+        libelle
+      }
+      mouvements {
+        type
+        dateMouvement
+        uniteFonctionnelle {
+          libelle
+        }
+      }
+      documents {
+        id
+        type
+        titre
+        statut
+      }
+    }
+  }
+}

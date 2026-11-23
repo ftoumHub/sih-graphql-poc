@@ -1,0 +1,325 @@
+# =====================================================================
+#  Types transverses : scalaires, directives, interfaces, erreurs métier,
+#  pagination, recherche, référentiel, statistiques et événements.
+#
+#  Spring for GraphQL charge et fusionne tous les fichiers *.graphqls
+#  de classpath:graphql/ : chaque domaine "étend" les types racines.
+#
+#  Conventions : camelCase pour les champs, PascalCase pour les types,
+#  MAJUSCULES pour les valeurs d'énumération, suffixe Input pour les inputs,
+#  préfixe Resultat pour les unions de retour des mutations.
+# =====================================================================
+
+# --------------------------------------------------------------------- Scalaires
+
+"""
+Date calendaire sans heure, au format ISO-8601 `yyyy-MM-dd`.
+
+Exemple : `1948-03-12`. Voir https://fr.wikipedia.org/wiki/ISO_8601
+"""
+scalar Date
+
+"""
+Date et heure LOCALES (fuseau de l'établissement, Europe/Paris), sans décalage horaire,
+au format ISO-8601 `yyyy-MM-dd'T'HH:mm:ss`.
+
+Exemple : `2026-11-18T09:30:00`. Les secondes sont facultatives en entrée.
+"""
+scalar DateHeure
+
+"""
+Identifiant permanent du patient (IPP) dans l'établissement : exactement 8 chiffres.
+
+Exemple : `00010001`. Une valeur mal formée est rejetée dès la validation de la requête.
+"""
+scalar IPP
+
+"""
+Numéro de téléphone français : 10 chiffres commençant par 0, sans espace ni séparateur.
+
+Exemple : `0612345678`.
+"""
+scalar Telephone
+
+# --------------------------------------------------------------------- Directives
+
+"""
+Coût d'un champ pour la limitation de la complexité des requêtes (protection contre le déni de service).
+
+coût = (valeur + coût des sous-champs) × facteur, où le facteur est la valeur de l'argument
+nommé par `multiplicateur` (ex. `taille`), sinon `cardinalite`, sinon 1.
+Une requête dont le coût total dépasse la limite du serveur (5000 par défaut) est refusée avant exécution.
+Un champ sans directive coûte 1 ; l'introspection est gratuite.
+"""
+directive @cout(
+    "Coût propre du champ"
+    valeur: Int = 1
+    "Nom de l'argument du champ dont la valeur multiplie le coût (ex. taille de page)"
+    multiplicateur: String
+    "Nombre d'éléments estimé pour une liste non paginée"
+    cardinalite: Int
+) on FIELD_DEFINITION
+
+# --------------------------------------------------------------------- Interfaces
+
+"""
+Objet métier identifiable, persisté dans la base de l'établissement.
+
+Implémenté par `Patient`, `Sejour` et `Document`.
+"""
+interface Noeud {
+    "Identifiant technique, unique pour un type donné."
+    id: ID!
+}
+
+# --------------------------------------------------------------------- Erreurs métier
+
+"""
+Codes des erreurs métier attendues. Le client doit s'appuyer sur le code (stable et traduisible),
+le message n'étant qu'une aide au diagnostic.
+"""
+enum CodeErreur {
+    "La ressource référencée n'existe pas (patient, séjour, document, UF). Voir `details`."
+    RESSOURCE_INTROUVABLE
+    "Une ou plusieurs données d'entrée sont invalides. Un élément de `details` par champ en faute."
+    VALIDATION
+    "L'IPP fourni est déjà attribué à un autre patient."
+    IPP_DEJA_UTILISE
+    "La date de naissance est postérieure à aujourd'hui."
+    DATE_NAISSANCE_FUTURE
+    "La date d'entrée est postérieure à maintenant."
+    DATE_FUTURE
+    "Le patient a déjà un séjour occupant un lit en cours (les consultations externes ne comptent pas)."
+    SEJOUR_DEJA_EN_COURS
+    "Action impossible : le séjour n'est pas en cours (déjà clos ou annulé)."
+    SEJOUR_NON_EN_COURS
+    "Le patient est déjà dans l'UF de destination."
+    MUTATION_MEME_UF
+    "La date du mouvement précède le mouvement précédent."
+    CHRONOLOGIE_INVALIDE
+    "Sortie d'hospitalisation complète ou ambulatoire impossible sans lettre de liaison VALIDÉE (sauf décès)."
+    LETTRE_LIAISON_MANQUANTE
+    "Aucun document ne peut être ajouté à un séjour annulé."
+    SEJOUR_ANNULE
+    "Le document est déjà validé."
+    DOCUMENT_DEJA_VALIDE
+    "Un document validé fait partie du dossier médical : il ne peut pas être supprimé."
+    DOCUMENT_VALIDE_NON_SUPPRIMABLE
+    "Numéro de page négatif ou taille hors de l'intervalle [1, 100]."
+    PAGINATION_INVALIDE
+    "Le texte recherché doit contenir au moins 2 caractères."
+    RECHERCHE_TROP_COURTE
+}
+
+"""
+Erreur métier attendue, renvoyée comme une DONNÉE par les mutations (membre des unions `Resultat...`).
+
+Les erreurs inattendues (panne, bug) restent dans le tableau `errors` de la réponse, avec un message masqué.
+"""
+type ErreurMetier {
+    "Code stable de l'erreur, à utiliser pour le traitement côté client."
+    code: CodeErreur!
+    "Message lisible, en français, destiné au diagnostic."
+    message: String!
+    "Précisions éventuelles (champ en faute, ressource introuvable...). Liste vide si aucune."
+    details: [DetailErreur!]!
+}
+
+"Précision sur une erreur métier."
+type DetailErreur {
+    "Champ d'entrée (ex. `prenom`) ou nature de la ressource (ex. `Sejour`) concerné."
+    champ: String!
+    "Explication ou valeur en cause."
+    message: String!
+}
+
+# --------------------------------------------------------------------- Pagination
+
+"Métadonnées de pagination, communes à toutes les listes paginées."
+type InfoPage {
+    "Numéro de la page renvoyée, à partir de 0."
+    page: Int!
+    "Nombre maximal d'éléments par page demandé."
+    taille: Int!
+    "Nombre total d'éléments correspondant aux critères, toutes pages confondues."
+    totalElements: Int!
+    "Nombre total de pages."
+    totalPages: Int!
+    "Vrai s'il n'y a pas de page suivante."
+    estDernierePage: Boolean!
+}
+
+# --------------------------------------------------------------------- Racine Query
+
+type Query {
+    """
+    Recherche transverse, insensible à la casse, dans les patients (nom, prénom, IPP),
+    les séjours (numéro, motif) et les documents (titre, contenu).
+
+    Renvoie des `Noeud` : utiliser `__typename` et des fragments inline.
+
+    ```graphql
+    query {
+      recherche(texte: "cardi") {
+        __typename
+        id
+        ... on Sejour { numeroSejour motif }
+        ... on Document { titre }
+      }
+    }
+    ```
+
+    Volontairement NULLABLE : un texte trop court (code `RECHERCHE_TROP_COURTE` dans `errors`)
+    met ce seul champ à null sans invalider le reste de la requête.
+    """
+    recherche(
+        "Texte recherché, au moins 2 caractères."
+        texte: String!
+        "Nombre maximal de résultats par nature d'objet (patients, séjours, documents)."
+        limiteParType: Int = 5
+    ): [Noeud!] @cout(valeur: 2, cardinalite: 15)
+
+    """
+    Indicateurs de pilotage de l'établissement.
+    Chaque indicateur n'est calculé que s'il est demandé : ne sélectionner que le nécessaire.
+    """
+    statistiques: Statistiques!
+
+    "Référentiel complet des unités fonctionnelles, triées par code."
+    unitesFonctionnelles: [UniteFonctionnelle!]! @cout(cardinalite: 10)
+
+    "Une unité fonctionnelle par son code (null si inconnue)."
+    uniteFonctionnelle(
+        "Code de l'UF sur 4 chiffres, ex. `1201`."
+        code: String!
+    ): UniteFonctionnelle
+}
+
+# --------------------------------------------------------------------- Référentiel
+
+"Unité fonctionnelle (UF) : maille élémentaire d'activité de l'établissement. Un service regroupe plusieurs UF."
+type UniteFonctionnelle {
+    "Code de l'UF sur 4 chiffres, ex. `1202`."
+    code: String!
+    "Libellé de l'UF, ex. `USIC (soins intensifs cardiologie)`."
+    libelle: String!
+    "Service de rattachement, ex. `Cardiologie`."
+    service: String!
+    "Nombre de lits. 0 pour une UF sans hébergement (consultations)."
+    capacite: Int!
+    "Séjours actuellement en cours dans l'UF, du plus ancien au plus récent."
+    sejoursEnCours: [Sejour!]! @cout(cardinalite: 20)
+    "Taux d'occupation en pourcentage (une décimale). Null si la capacité est nulle."
+    tauxOccupation: Float
+}
+
+# --------------------------------------------------------------------- Statistiques
+
+"Indicateurs de pilotage. Chaque champ est calculé à la demande par une requête SQL dédiée."
+type Statistiques {
+    "Nombre total de patients connus."
+    nombrePatients: Int!
+    "Nombre de séjours au statut EN_COURS, toutes UF confondues."
+    nombreSejoursEnCours: Int!
+    "Occupation de chaque UF, triée par code."
+    occupationParUf: [OccupationUf!]! @cout(cardinalite: 10)
+    "Nombre de documents par type et par statut."
+    documentsParTypeEtStatut: [CompteurDocuments!]! @cout(cardinalite: 14)
+    "Durée moyenne des séjours clos, en jours calendaires. Null s'il n'y a aucun séjour clos."
+    dureeMoyenneSejoursClosJours: Float
+}
+
+"Occupation d'une unité fonctionnelle à l'instant de la requête."
+type OccupationUf {
+    "Code de l'UF."
+    ufCode: String!
+    "Libellé de l'UF."
+    libelle: String!
+    "Nombre de lits."
+    capacite: Int!
+    "Nombre de séjours en cours dans l'UF."
+    patientsPresents: Int!
+    "Taux d'occupation en pourcentage. Null si la capacité est nulle."
+    tauxOccupation: Float
+}
+
+"Compteur de documents pour un couple (type, statut)."
+type CompteurDocuments {
+    "Type de document."
+    type: TypeDocument!
+    "Statut du document."
+    statut: StatutDocument!
+    "Nombre de documents."
+    nombre: Int!
+}
+
+# --------------------------------------------------------------------- Événements
+
+"Nature d'un événement métier."
+enum TypeEvenement {
+    "Un patient a été admis (création d'un séjour)."
+    ADMISSION
+    "Un patient a changé d'unité fonctionnelle."
+    MUTATION
+    "Un séjour a été clos."
+    SORTIE
+    "Un séjour a été annulé."
+    ANNULATION
+    "Un document a été ajouté en brouillon."
+    DOCUMENT_AJOUTE
+    "Un document a été validé."
+    DOCUMENT_VALIDE
+}
+
+"""
+Événement métier diffusé en temps réel. Implémenté par `EvenementSejour` et `EvenementDocument`.
+"""
+interface EvenementSih {
+    "Nature de l'événement."
+    type: TypeEvenement!
+    "Date et heure de publication de l'événement."
+    horodatage: DateHeure!
+}
+
+"Événement portant sur un séjour : ADMISSION, MUTATION, SORTIE ou ANNULATION."
+type EvenementSejour implements EvenementSih {
+    "Nature de l'événement."
+    type: TypeEvenement!
+    "Date et heure de publication de l'événement."
+    horodatage: DateHeure!
+    "Le séjour dans son état APRÈS l'événement."
+    sejour: Sejour!
+}
+
+"Événement portant sur un document : DOCUMENT_AJOUTE ou DOCUMENT_VALIDE."
+type EvenementDocument implements EvenementSih {
+    "Nature de l'événement."
+    type: TypeEvenement!
+    "Date et heure de publication de l'événement."
+    horodatage: DateHeure!
+    "Le document dans son état APRÈS l'événement."
+    document: Document!
+}
+
+type Subscription {
+    """
+    Flux temps réel des événements métier (WebSocket `/graphql-ws`, protocole `graphql-transport-ws`).
+    Seuls les événements postérieurs à l'abonnement sont reçus.
+
+    ```graphql
+    subscription {
+      evenements(types: [ADMISSION, SORTIE]) {
+        type
+        horodatage
+        ... on EvenementSejour { sejour { numeroSejour statut } }
+      }
+    }
+    ```
+    """
+    evenements(
+        "Ne recevoir que les événements de ce patient. Tous les patients si absent."
+        patientId: ID
+        "Ne recevoir que ces types d'événements. Tous les types si absent ou vide."
+        types: [TypeEvenement!]
+    ): EvenementSih!
+}

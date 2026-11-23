@@ -1,0 +1,22 @@
+# Subscription : tous les événements (interface + fragments inline)
+subscription TousLesEvenements {
+  evenements {
+    __typename
+    type
+    horodatage
+    ... on EvenementSejour {
+      sejour {
+        id
+        numeroSejour
+        statut
+      }
+    }
+    ... on EvenementDocument {
+      document {
+        id
+        titre
+        statut
+      }
+    }
+  }
+}

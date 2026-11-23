@@ -1,0 +1,52 @@
+# Requête trop profonde (25 niveaux > 20) : rejetée par MaxQueryDepthInstrumentation
+query TropProfond {
+  patient(id: 1) {
+    sejours {
+      patient {
+        sejours {
+          patient {
+            sejours {
+              patient {
+                sejours {
+                  patient {
+                    sejours {
+                      patient {
+                        sejours {
+                          patient {
+                            sejours {
+                              patient {
+                                sejours {
+                                  patient {
+                                    sejours {
+                                      patient {
+                                        sejours {
+                                          patient {
+                                            sejours {
+                                              patient {
+                                                sejours {
+                                                  numeroSejour
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

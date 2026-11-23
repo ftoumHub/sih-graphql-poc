@@ -1,0 +1,15 @@
+# Patients mineurs (scalaire Date en entrée)
+# Variables :
+#   {
+#     "neApres": "2008-11-19"
+#   }
+query Mineurs($neApres: Date!) {
+  patients(filtre: { neApres: $neApres }) {
+    contenu {
+      nomAffiche
+      prenom
+      age
+      estMineur
+    }
+  }
+}

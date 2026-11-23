@@ -1,0 +1,16 @@
+# Règle métier : sortie d'un séjour déjà clos
+mutation SejourClos {
+  sortirPatient(entree: { sejourId: 1, modeSortie: DOMICILE }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

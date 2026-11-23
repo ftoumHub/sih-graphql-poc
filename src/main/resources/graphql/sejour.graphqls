@@ -1,0 +1,230 @@
+# =====================================================================
+#  Séjours et mouvements
+# =====================================================================
+
+extend type Query {
+    "Un séjour par son identifiant technique. Null s'il n'existe pas."
+    sejour(
+        "Identifiant technique du séjour."
+        id: ID!
+    ): Sejour
+
+    "Un séjour par son numéro de dossier administratif (NDA). Null s'il n'existe pas."
+    sejourParNumero(
+        "Numéro de séjour sur 10 chiffres : année + numéro d'ordre, ex. `2026000001`."
+        numero: String!
+    ): Sejour
+
+    """
+    Recherche multicritère paginée des séjours, du plus récent au plus ancien (date d'entrée).
+
+    ```graphql
+    query {
+      sejours(filtre: { statuts: [EN_COURS], ufCode: "4101" }) {
+        contenu { numeroSejour dureeJours patient { nomAffiche } }
+        infoPage { totalElements }
+      }
+    }
+    ```
+
+    Erreur `PAGINATION_INVALIDE` (dans `errors`) si `taille` sort de [1, 100].
+    """
+    sejours(
+        "Critères, combinés en ET. Tous les séjours si absent."
+        filtre: FiltreSejour
+        "Numéro de page, à partir de 0."
+        page: Int = 0
+        "Nombre d'éléments par page, entre 1 et 100."
+        taille: Int = 20
+    ): SejourPage! @cout(multiplicateur: "taille")
+}
+
+extend type Mutation {
+    """
+    Admet un patient : crée un séjour EN_COURS, lui attribue un numéro (NDA) et enregistre le mouvement d'ENTREE.
+
+    Erreurs possibles : `VALIDATION`, `RESSOURCE_INTROUVABLE` (patient ou UF), `SEJOUR_DEJA_EN_COURS`, `DATE_FUTURE`.
+    Publie l'événement `ADMISSION`.
+    """
+    admettrePatient(entree: AdmissionInput!): ResultatSejour!
+
+    """
+    Mute le patient vers une autre unité fonctionnelle (mouvement de MUTATION).
+
+    Erreurs possibles : `RESSOURCE_INTROUVABLE`, `SEJOUR_NON_EN_COURS`, `MUTATION_MEME_UF`, `CHRONOLOGIE_INVALIDE`.
+    Publie l'événement `MUTATION`.
+    """
+    muterPatient(entree: MutationPatientInput!): ResultatSejour!
+
+    """
+    Clôt le séjour (mouvement de SORTIE). Une lettre de liaison VALIDÉE est exigée pour une hospitalisation
+    complète ou ambulatoire, sauf en cas de décès.
+
+    Erreurs possibles : `RESSOURCE_INTROUVABLE`, `SEJOUR_NON_EN_COURS`, `LETTRE_LIAISON_MANQUANTE`, `CHRONOLOGIE_INVALIDE`.
+    Publie l'événement `SORTIE`.
+    """
+    sortirPatient(entree: SortieInput!): ResultatSejour!
+
+    """
+    Annule un séjour créé par erreur. Le séjour reste consultable avec le statut ANNULE.
+
+    Erreurs possibles : `RESSOURCE_INTROUVABLE`, `SEJOUR_NON_EN_COURS`. Publie l'événement `ANNULATION`.
+    """
+    annulerSejour(entree: AnnulationSejourInput!): ResultatSejour!
+}
+
+"Résultat d'une mutation sur un séjour : le séjour dans son nouvel état, ou l'erreur métier."
+union ResultatSejour = Sejour | ErreurMetier
+
+"Nature de la prise en charge."
+enum TypeSejour {
+    "Hospitalisation d'au moins une nuit. Occupe un lit."
+    HOSPITALISATION_COMPLETE
+    "Hospitalisation de jour, sans nuitée. Occupe un lit."
+    AMBULATOIRE
+    "Passage aux urgences. Occupe un box."
+    URGENCES
+    "Consultation sans hébergement. Cumulable avec un autre séjour en cours."
+    CONSULTATION_EXTERNE
+}
+
+"Cycle de vie d'un séjour."
+enum StatutSejour {
+    "Le patient est présent dans l'établissement."
+    EN_COURS
+    "Le patient est sorti."
+    CLOS
+    "Le séjour a été créé par erreur puis annulé."
+    ANNULE
+}
+
+"Nature d'un mouvement du patient."
+enum TypeMouvement {
+    "Arrivée dans l'établissement."
+    ENTREE
+    "Changement d'unité fonctionnelle."
+    MUTATION
+    "Départ de l'établissement."
+    SORTIE
+}
+
+"Destination du patient à sa sortie."
+enum ModeSortie {
+    "Retour au domicile."
+    DOMICILE
+    "Transfert vers un autre établissement."
+    TRANSFERT
+    "Décès. Dispense de lettre de liaison."
+    DECES
+    "Sortie contre avis médical."
+    CONTRE_AVIS_MEDICAL
+}
+
+"Venue d'un patient dans l'établissement, de l'entrée à la sortie."
+type Sejour implements Noeud {
+    "Identifiant technique du séjour."
+    id: ID!
+    "Numéro de dossier administratif (NDA) : année d'entrée + numéro d'ordre sur 6 chiffres."
+    numeroSejour: String!
+    "Nature de la prise en charge."
+    type: TypeSejour!
+    "Statut du séjour."
+    statut: StatutSejour!
+    "Motif de venue, saisi à l'admission."
+    motif: String
+    "Date et heure d'entrée."
+    dateEntree: DateHeure!
+    "Date et heure de sortie. Null tant que le séjour n'est pas clos."
+    dateSortie: DateHeure
+    "Mode de sortie. Null tant que le séjour n'est pas clos."
+    modeSortie: ModeSortie
+    "Durée en jours calendaires, jusqu'à aujourd'hui si le séjour est en cours."
+    dureeJours: Int!
+    "Vrai si le statut est EN_COURS."
+    estEnCours: Boolean!
+
+    "Le patient (chargé en lot)."
+    patient: Patient!
+    "Unité fonctionnelle où se trouve le patient (ou se trouvait à sa sortie)."
+    ufCourante: UniteFonctionnelle!
+    "Mouvements du séjour dans l'ordre chronologique : ENTREE, MUTATION..., SORTIE."
+    mouvements: [Mouvement!]! @cout(cardinalite: 4)
+    "Documents du séjour, du plus ancien au plus récent (chargés en lot)."
+    documents: [Document!]! @cout(cardinalite: 5)
+}
+
+"Mouvement du patient au sein d'un séjour."
+type Mouvement {
+    "Nature du mouvement."
+    type: TypeMouvement!
+    "Date et heure du mouvement."
+    dateMouvement: DateHeure!
+    "Code de l'UF concernée."
+    ufCode: String! @deprecated(reason: "Utiliser uniteFonctionnelle { code }. Ce champ sera supprimé dans une prochaine version.")
+    "Unité fonctionnelle concernée par le mouvement."
+    uniteFonctionnelle: UniteFonctionnelle!
+}
+
+"Une page de séjours."
+type SejourPage {
+    "Les séjours de la page."
+    contenu: [Sejour!]!
+    "Métadonnées de pagination."
+    infoPage: InfoPage!
+}
+
+"Critères de recherche de séjours, tous facultatifs et combinés en ET."
+input FiltreSejour {
+    "Séjours de ce patient uniquement."
+    patientId: ID
+    "Séjours ayant l'un de ces statuts."
+    statuts: [StatutSejour!]
+    "Séjours de ce type."
+    type: TypeSejour
+    "Séjours dont l'UF courante a ce code."
+    ufCode: String
+    "Entrés à partir de cette date-heure (borne incluse)."
+    entreApres: DateHeure
+    "Entrés avant cette date-heure (borne exclue)."
+    entreAvant: DateHeure
+}
+
+"Données d'admission d'un patient."
+input AdmissionInput {
+    "Patient à admettre."
+    patientId: ID!
+    "Nature de la prise en charge."
+    type: TypeSejour!
+    "Code de l'UF d'accueil, ex. `3001` pour les urgences adultes."
+    ufCode: String!
+    "Motif de venue, 255 caractères maximum."
+    motif: String
+    "Date et heure d'entrée. Maintenant si absente ; ne peut pas être dans le futur."
+    dateEntree: DateHeure
+}
+
+"Données de mutation d'un patient vers une autre UF."
+input MutationPatientInput {
+    "Séjour concerné (doit être EN_COURS)."
+    sejourId: ID!
+    "Code de l'UF de destination, différente de l'UF courante."
+    ufDestination: String!
+    "Date et heure de la mutation. Maintenant si absente ; pas avant le dernier mouvement."
+    dateMutation: DateHeure
+}
+
+"Données de sortie d'un patient."
+input SortieInput {
+    "Séjour à clore (doit être EN_COURS)."
+    sejourId: ID!
+    "Destination du patient."
+    modeSortie: ModeSortie!
+    "Date et heure de sortie. Maintenant si absente ; pas avant le dernier mouvement."
+    dateSortie: DateHeure
+}
+
+"Données d'annulation d'un séjour."
+input AnnulationSejourInput {
+    "Séjour à annuler (doit être EN_COURS)."
+    sejourId: ID!
+}

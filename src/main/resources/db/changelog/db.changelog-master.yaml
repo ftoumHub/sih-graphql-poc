@@ -1,0 +1,9 @@
+databaseChangeLog:
+  # 1. Le schéma (toujours appliqué)
+  - include:
+      file: changes/001-schema.sql
+      relativeToChangelogFile: true
+  # 2. Le jeu de données de démonstration (uniquement avec le contexte "demo")
+  - include:
+      file: changes/002-donnees-demo.sql
+      relativeToChangelogFile: true

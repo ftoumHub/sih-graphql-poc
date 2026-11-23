@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sih
+      POSTGRES_USER: sih
+      POSTGRES_PASSWORD: sih
+    ports:
+      - "5432:5432"
+    volumes:
+      - sih-data:/var/lib/postgresql/data
+
+volumes:
+  sih-data:

@@ -1,0 +1,20 @@
+# Séjours en cours avec UF et patient (batch loading)
+query SejoursEnCours {
+  sejours(filtre: { statuts: [EN_COURS] }, taille: 50) {
+    infoPage { totalElements }
+    contenu {
+      numeroSejour
+      type
+      dateEntree
+      dureeJours
+      ufCourante {
+        code
+        libelle
+      }
+      patient {
+        nomAffiche
+        prenom
+      }
+    }
+  }
+}

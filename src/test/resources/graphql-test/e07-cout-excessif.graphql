@@ -1,0 +1,15 @@
+# Requête trop coûteuse (directive @cout) : rejetée avant exécution
+query TropCouteuse {
+  patients(taille: 100) {
+    contenu {
+      nomAffiche
+      sejours {
+        numeroSejour
+        documents {
+          titre
+          contenu
+        }
+      }
+    }
+  }
+}

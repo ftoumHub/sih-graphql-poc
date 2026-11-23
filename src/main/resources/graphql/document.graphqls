@@ -1,0 +1,178 @@
+# =====================================================================
+#  Documents médicaux
+# =====================================================================
+
+extend type Query {
+    "Un document par son identifiant technique. Null s'il n'existe pas."
+    document(
+        "Identifiant technique du document."
+        id: ID!
+    ): Document
+
+    """
+    Recherche multicritère paginée des documents, du plus récent au plus ancien.
+
+    ```graphql
+    query {
+      documents(filtre: { statut: BROUILLON, types: [LETTRE_DE_LIAISON] }) {
+        contenu { id titre auteur sejour { numeroSejour } }
+        infoPage { totalElements }
+      }
+    }
+    ```
+
+    Erreur `PAGINATION_INVALIDE` (dans `errors`) si `taille` sort de [1, 100].
+    """
+    documents(
+        "Critères, combinés en ET. Tous les documents si absent."
+        filtre: FiltreDocument
+        "Numéro de page, à partir de 0."
+        page: Int = 0
+        "Nombre d'éléments par page, entre 1 et 100."
+        taille: Int = 20
+    ): DocumentPage! @cout(multiplicateur: "taille")
+}
+
+extend type Mutation {
+    """
+    Ajoute un document en BROUILLON à un séjour. Le patient est déduit du séjour.
+
+    Erreurs possibles : `VALIDATION`, `RESSOURCE_INTROUVABLE`, `SEJOUR_ANNULE`. Publie l'événement `DOCUMENT_AJOUTE`.
+    """
+    ajouterDocument(entree: AjoutDocumentInput!): ResultatDocument!
+
+    """
+    Valide un document : BROUILLON -> VALIDE. Un document validé n'est plus modifiable ni supprimable.
+
+    Erreurs possibles : `VALIDATION`, `RESSOURCE_INTROUVABLE`, `DOCUMENT_DEJA_VALIDE`. Publie l'événement `DOCUMENT_VALIDE`.
+    """
+    validerDocument(entree: ValidationDocumentInput!): ResultatDocument!
+
+    """
+    Supprime un document en BROUILLON.
+
+    Erreurs possibles : `RESSOURCE_INTROUVABLE`, `DOCUMENT_VALIDE_NON_SUPPRIMABLE`.
+    """
+    supprimerDocument(entree: SuppressionDocumentInput!): ResultatSuppression!
+}
+
+"Résultat d'une mutation sur un document : le document dans son nouvel état, ou l'erreur métier."
+union ResultatDocument = Document | ErreurMetier
+
+"Résultat d'une suppression de document."
+union ResultatSuppression = DocumentSupprime | ErreurMetier
+
+"Confirmation de suppression d'un document."
+type DocumentSupprime {
+    "Identifiant du document supprimé."
+    id: ID!
+}
+
+"Nature d'un document médical."
+enum TypeDocument {
+    "Compte rendu d'hospitalisation (CRH), rédigé à la fin du séjour."
+    COMPTE_RENDU_HOSPITALISATION
+    "Compte rendu opératoire (CRO)."
+    COMPTE_RENDU_OPERATOIRE
+    "Compte rendu de consultation."
+    COMPTE_RENDU_CONSULTATION
+    "Compte rendu d'examen d'imagerie."
+    COMPTE_RENDU_IMAGERIE
+    "Lettre de liaison remise au patient à sa sortie. Obligatoire pour clore une hospitalisation."
+    LETTRE_DE_LIAISON
+    "Ordonnance de prescription."
+    ORDONNANCE
+    "Résultat d'analyses de biologie médicale."
+    RESULTAT_BIOLOGIE
+}
+
+"Cycle de vie d'un document."
+enum StatutDocument {
+    "En cours de rédaction : modifiable et supprimable."
+    BROUILLON
+    "Validé par un professionnel : intégré au dossier, ni modifiable ni supprimable."
+    VALIDE
+}
+
+"Document médical rattaché à un séjour."
+type Document implements Noeud {
+    "Identifiant technique du document."
+    id: ID!
+    "Nature du document."
+    type: TypeDocument!
+    "Titre du document."
+    titre: String!
+    "Contenu textuel, éventuellement tronqué. Champ potentiellement volumineux : ne le demander que si nécessaire."
+    contenu(
+        "Longueur maximale renvoyée ; au-delà, le texte est coupé et terminé par `…`. Contenu complet si absent."
+        longueurMax: Int
+    ): String @cout(valeur: 5)
+    "Nombre de caractères du contenu complet (0 si vide)."
+    taille: Int!
+    "Auteur du document."
+    auteur: String!
+    "Statut du document."
+    statut: StatutDocument!
+    "Date et heure de création."
+    dateCreation: DateHeure!
+    "Date et heure de validation. Null pour un brouillon."
+    dateValidation: DateHeure
+    "Professionnel ayant validé le document. Null pour un brouillon."
+    validePar: String
+    "Séjour auquel le document est rattaché (chargé en lot)."
+    sejour: Sejour!
+    "Patient concerné (chargé en lot)."
+    patient: Patient!
+}
+
+"Une page de documents."
+type DocumentPage {
+    "Les documents de la page."
+    contenu: [Document!]!
+    "Métadonnées de pagination."
+    infoPage: InfoPage!
+}
+
+"Critères de recherche de documents, tous facultatifs et combinés en ET."
+input FiltreDocument {
+    "Documents de ce patient."
+    patientId: ID
+    "Documents de ce séjour."
+    sejourId: ID
+    "Documents de l'un de ces types."
+    types: [TypeDocument!]
+    "Documents ayant ce statut."
+    statut: StatutDocument
+    "Fragment du nom de l'auteur, insensible à la casse."
+    auteur: String
+    "Fragment du titre, insensible à la casse."
+    titreContient: String
+}
+
+"Données de création d'un document (créé en BROUILLON)."
+input AjoutDocumentInput {
+    "Séjour de rattachement (ne doit pas être annulé)."
+    sejourId: ID!
+    "Nature du document."
+    type: TypeDocument!
+    "Titre, 255 caractères maximum, non vide."
+    titre: String!
+    "Contenu textuel, 100 000 caractères maximum."
+    contenu: String
+    "Auteur, 100 caractères maximum, non vide."
+    auteur: String!
+}
+
+"Données de validation d'un document."
+input ValidationDocumentInput {
+    "Document à valider (doit être en BROUILLON)."
+    documentId: ID!
+    "Professionnel qui valide, 100 caractères maximum, non vide."
+    validePar: String!
+}
+
+"Données de suppression d'un document."
+input SuppressionDocumentInput {
+    "Document à supprimer (doit être en BROUILLON)."
+    documentId: ID!
+}

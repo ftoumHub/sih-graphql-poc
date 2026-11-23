@@ -1,0 +1,1397 @@
+# Catalogue des requêtes GraphQL du POC SIH
+# Client HTTP IntelliJ IDEA : cliquer sur ▶ à gauche de chaque requête.
+# Les ids des mutations (13, 15, 24...) supposent une base fraîche et le scénario joué dans l'ordre.
+
+### q01-patient-par-id — Un patient par id, avec variable
+GRAPHQL http://localhost:8080/graphql
+
+query PatientParId($id: ID!) {
+  patient(id: $id) {
+    id
+    ipp
+    nomNaissance
+    prenom
+    dateNaissance
+    age
+    sexe
+  }
+}
+
+{
+  "id": 1
+}
+
+### q02-patient-inexistant — Patient inexistant : null, pas d'erreur
+GRAPHQL http://localhost:8080/graphql
+
+query PatientInexistant {
+  patient(id: 9999) {
+    id
+  }
+}
+
+### q03-patient-par-ipp — Recherche par IPP (argument littéral) et champ calculé nomAffiche
+GRAPHQL http://localhost:8080/graphql
+
+query PatientParIpp {
+  patientParIpp(ipp: "00010003") {
+    nomNaissance
+    nomUsage
+    nomAffiche
+    prenom
+  }
+}
+
+### q04-syntaxe-raccourcie — Syntaxe raccourcie : query anonyme, un seul champ
+GRAPHQL http://localhost:8080/graphql
+
+{
+  patient(id: 1) {
+    prenom
+  }
+}
+
+### q05-alias — Alias : deux fois le même champ avec des arguments différents
+GRAPHQL http://localhost:8080/graphql
+
+query DeuxPatients {
+  jeanne: patient(id: 1) {
+    prenom
+    age
+  }
+  louis: patient(id: 2) {
+    prenom
+    age
+  }
+}
+
+### q06-fragments — Fragments : factoriser une sélection de champs
+GRAPHQL http://localhost:8080/graphql
+
+query AvecFragments {
+  premier: patient(id: 1) {
+    ...IdentitePatient
+  }
+  second: patientParIpp(ipp: "00010004") {
+    ...IdentitePatient
+    estMineur
+  }
+}
+
+fragment IdentitePatient on Patient {
+  id
+  ipp
+  nomAffiche
+  prenom
+  dateNaissance
+  age
+  sexe
+}
+
+### q07-valeur-par-defaut-variable — Variable avec valeur par défaut
+GRAPHQL http://localhost:8080/graphql
+
+query PremiersPatients($taille: Int = 3) {
+  patients(taille: $taille) {
+    contenu {
+      nomAffiche
+      prenom
+    }
+    infoPage {
+      taille
+    }
+  }
+}
+
+### q08-pagination — Pagination : page 1, 5 éléments par page
+GRAPHQL http://localhost:8080/graphql
+
+query Pagination($page: Int!, $taille: Int!) {
+  patients(page: $page, taille: $taille) {
+    infoPage {
+      page
+      taille
+      totalElements
+      totalPages
+      estDernierePage
+    }
+    contenu {
+      id
+      nomAffiche
+      prenom
+    }
+  }
+}
+
+{
+  "page": 1,
+  "taille": 5
+}
+
+### q09-filtre-nom — Filtre sur le nom (naissance OU usage), insensible à la casse
+GRAPHQL http://localhost:8080/graphql
+
+query FiltreNom {
+  patients(filtre: { nom: "mar" }) {
+    infoPage { totalElements }
+    contenu {
+      nomNaissance
+      nomUsage
+      prenom
+    }
+  }
+}
+
+### q10-filtre-combine — Filtre combiné passé en variable (input object)
+GRAPHQL http://localhost:8080/graphql
+
+query FiltreCombine($filtre: FiltrePatient) {
+  patients(filtre: $filtre) {
+    infoPage { totalElements }
+    contenu {
+      nomAffiche
+      prenom
+      dateNaissance
+      sexe
+    }
+  }
+}
+
+{
+  "filtre": {
+    "sexe": "F",
+    "neAvant": "1970-01-01"
+  }
+}
+
+### q11-patients-mineurs — Patients mineurs (scalaire Date en entrée)
+GRAPHQL http://localhost:8080/graphql
+
+query Mineurs($neApres: Date!) {
+  patients(filtre: { neApres: $neApres }) {
+    contenu {
+      nomAffiche
+      prenom
+      age
+      estMineur
+    }
+  }
+}
+
+{
+  "neApres": "2008-11-19"
+}
+
+### q12-directives — Directives @include / @skip pilotées par variables
+GRAPHQL http://localhost:8080/graphql
+
+query Directives($avecSejours: Boolean!, $sansTelephone: Boolean!) {
+  patient(id: 1) {
+    prenom
+    telephone @skip(if: $sansTelephone)
+    sejours @include(if: $avecSejours) {
+      numeroSejour
+      statut
+    }
+  }
+}
+
+{
+  "avecSejours": true,
+  "sansTelephone": true
+}
+
+### q13-typename — Méta-champ __typename
+GRAPHQL http://localhost:8080/graphql
+
+query TypeName {
+  patient(id: 1) {
+    __typename
+    id
+    sejours {
+      __typename
+      numeroSejour
+    }
+  }
+}
+
+### q14-introspection-type — Introspection : structure du type Sejour
+GRAPHQL http://localhost:8080/graphql
+
+query IntrospectionSejour {
+  __type(name: "Sejour") {
+    name
+    description
+    fields {
+      name
+      description
+      type {
+        kind
+        name
+        ofType {
+          kind
+          name
+        }
+      }
+    }
+  }
+}
+
+### q15-introspection-enum — Introspection : valeurs d'une énumération
+GRAPHQL http://localhost:8080/graphql
+
+query IntrospectionEnum {
+  __type(name: "TypeDocument") {
+    enumValues {
+      name
+    }
+  }
+}
+
+### q16-introspection-racines — Introspection : toutes les opérations disponibles
+GRAPHQL http://localhost:8080/graphql
+
+query OperationsDisponibles {
+  __schema {
+    queryType { fields { name } }
+    mutationType { fields { name } }
+    subscriptionType { fields { name } }
+  }
+}
+
+### q17-champs-deprecies — Introspection : champs dépréciés et raison de la dépréciation
+GRAPHQL http://localhost:8080/graphql
+
+query ChampsDeprecies {
+  __type(name: "Mouvement") {
+    fields(includeDeprecated: true) {
+      name
+      isDeprecated
+      deprecationReason
+    }
+  }
+}
+
+### q20-dossier-patient — Dossier patient complet : séjours, mouvements, documents
+GRAPHQL http://localhost:8080/graphql
+
+query DossierPatient($id: ID!) {
+  patient(id: $id) {
+    nomAffiche
+    prenom
+    age
+    sejours {
+      numeroSejour
+      type
+      statut
+      motif
+      dateEntree
+      dateSortie
+      dureeJours
+      ufCourante {
+        code
+        libelle
+      }
+      mouvements {
+        type
+        dateMouvement
+        uniteFonctionnelle {
+          libelle
+        }
+      }
+      documents {
+        id
+        type
+        titre
+        statut
+      }
+    }
+  }
+}
+
+{
+  "id": 1
+}
+
+### q21-sejour-vers-patient — Navigation inverse : du séjour vers le patient
+GRAPHQL http://localhost:8080/graphql
+
+query SejourEtPatient {
+  sejour(id: 3) {
+    numeroSejour
+    motif
+    estEnCours
+    patient {
+      nomAffiche
+      prenom
+      age
+    }
+    ufCourante {
+      code
+      libelle
+      service
+    }
+  }
+}
+
+### q22-sejour-par-numero — Séjour par numéro (NDA)
+GRAPHQL http://localhost:8080/graphql
+
+query SejourParNumero($numero: String!) {
+  sejourParNumero(numero: $numero) {
+    id
+    type
+    statut
+    modeSortie
+    dureeJours
+  }
+}
+
+{
+  "numero": "2026000001"
+}
+
+### q23-parcours-mouvements — Parcours du patient dans l'hôpital (urgences -> USIC -> cardio)
+GRAPHQL http://localhost:8080/graphql
+
+query Parcours {
+  sejour(id: 1) {
+    numeroSejour
+    mouvements {
+      type
+      dateMouvement
+      uniteFonctionnelle {
+        code
+        libelle
+        service
+      }
+    }
+  }
+}
+
+### q24-n-plus-1-vs-batch — N+1 (sejourEnCours) contre batch loading (sejours) : comparer les logs SQL
+GRAPHQL http://localhost:8080/graphql
+
+query NPlusUn {
+  patients(taille: 12) {
+    contenu {
+      nomAffiche
+      sejourEnCours {
+        numeroSejour
+      }
+      sejours {
+        numeroSejour
+      }
+    }
+  }
+}
+
+### q25-argument-de-champ — Argument sur un champ imbriqué + alias
+GRAPHQL http://localhost:8080/graphql
+
+query DocumentsDuPatient {
+  patient(id: 1) {
+    lettres: documents(type: LETTRE_DE_LIAISON) {
+      titre
+      statut
+    }
+    tous: documents {
+      type
+      titre
+    }
+  }
+}
+
+### q26-contenu-tronque — Argument de champ calculé : contenu tronqué
+GRAPHQL http://localhost:8080/graphql
+
+query Apercu {
+  document(id: 1) {
+    titre
+    taille
+    apercu: contenu(longueurMax: 30)
+    complet: contenu
+  }
+}
+
+### q27-sejours-en-cours — Séjours en cours avec UF et patient (batch loading)
+GRAPHQL http://localhost:8080/graphql
+
+query SejoursEnCours {
+  sejours(filtre: { statuts: [EN_COURS] }, taille: 50) {
+    infoPage { totalElements }
+    contenu {
+      numeroSejour
+      type
+      dateEntree
+      dureeJours
+      ufCourante {
+        code
+        libelle
+      }
+      patient {
+        nomAffiche
+        prenom
+      }
+    }
+  }
+}
+
+### q28-sejours-periode — Filtre sur une période et un type de séjour
+GRAPHQL http://localhost:8080/graphql
+
+query SejoursPeriode($filtre: FiltreSejour!) {
+  sejours(filtre: $filtre) {
+    infoPage { totalElements }
+    contenu {
+      numeroSejour
+      type
+      dateEntree
+      statut
+    }
+  }
+}
+
+{
+  "filtre": {
+    "entreApres": "2026-11-01T00:00:00",
+    "entreAvant": "2026-12-01T00:00:00",
+    "type": "HOSPITALISATION_COMPLETE"
+  }
+}
+
+### q29-documents-brouillons — Documents en brouillon à valider (avec séjour et patient)
+GRAPHQL http://localhost:8080/graphql
+
+query Brouillons {
+  documents(filtre: { statut: BROUILLON }) {
+    infoPage { totalElements }
+    contenu {
+      id
+      type
+      titre
+      auteur
+      dateCreation
+      sejour {
+        numeroSejour
+      }
+      patient {
+        nomAffiche
+      }
+    }
+  }
+}
+
+### q30-documents-multi-criteres — Filtre sur une liste d'énumérations + auteur
+GRAPHQL http://localhost:8080/graphql
+
+query DocumentsMultiCriteres {
+  documents(filtre: { types: [LETTRE_DE_LIAISON, ORDONNANCE], auteur: "durand" }) {
+    infoPage { totalElements }
+    contenu {
+      type
+      titre
+      auteur
+      validePar
+      dateValidation
+    }
+  }
+}
+
+### q31-unites-fonctionnelles — Référentiel des UF avec occupation et patients présents
+GRAPHQL http://localhost:8080/graphql
+
+query UnitesFonctionnelles {
+  unitesFonctionnelles {
+    code
+    libelle
+    service
+    capacite
+    tauxOccupation
+    sejoursEnCours {
+      numeroSejour
+      patient {
+        nomAffiche
+      }
+    }
+  }
+}
+
+### q32-uf-par-code — Une UF par code
+GRAPHQL http://localhost:8080/graphql
+
+query Uf {
+  uniteFonctionnelle(code: "4101") {
+    libelle
+    capacite
+    tauxOccupation
+    sejoursEnCours {
+      numeroSejour
+      motif
+      dureeJours
+    }
+  }
+}
+
+### q33-recherche-interface — Recherche transverse : interface Noeud + fragments inline
+GRAPHQL http://localhost:8080/graphql
+
+query Recherche($texte: String!) {
+  recherche(texte: $texte, limiteParType: 10) {
+    __typename
+    id
+    ... on Patient {
+      nomAffiche
+      prenom
+    }
+    ... on Sejour {
+      numeroSejour
+      motif
+    }
+    ... on Document {
+      type
+      titre
+    }
+  }
+}
+
+{
+  "texte": "cardi"
+}
+
+### q34-recherche-ipp — Recherche par IPP (seuls les patients ont des champs demandés)
+GRAPHQL http://localhost:8080/graphql
+
+query RechercheIpp {
+  recherche(texte: "00010008") {
+    __typename
+    ... on Patient {
+      nomAffiche
+      ipp
+    }
+  }
+}
+
+### q35-statistiques — Tableau de bord : toutes les statistiques
+GRAPHQL http://localhost:8080/graphql
+
+query Statistiques {
+  statistiques {
+    nombrePatients
+    nombreSejoursEnCours
+    dureeMoyenneSejoursClosJours
+    occupationParUf {
+      ufCode
+      libelle
+      capacite
+      patientsPresents
+      tauxOccupation
+    }
+    documentsParTypeEtStatut {
+      type
+      statut
+      nombre
+    }
+  }
+}
+
+### q36-statistiques-partielles — Un seul indicateur : une seule requête SQL exécutée
+GRAPHQL http://localhost:8080/graphql
+
+query UnIndicateur {
+  statistiques {
+    nombrePatients
+  }
+}
+
+### q37-multi-racines — Plusieurs racines dans une même requête (écran d'accueil)
+GRAPHQL http://localhost:8080/graphql
+
+query EcranAccueil {
+  statistiques {
+    nombreSejoursEnCours
+  }
+  brouillons: documents(filtre: { statut: BROUILLON }, taille: 3) {
+    infoPage { totalElements }
+    contenu {
+      titre
+    }
+  }
+  urgences: uniteFonctionnelle(code: "3001") {
+    sejoursEnCours {
+      numeroSejour
+      motif
+    }
+  }
+}
+
+### e01-reponse-partielle — Réponse partielle : une erreur sur un champ n'empêche pas les autres
+GRAPHQL http://localhost:8080/graphql
+
+query ReponsePartielle {
+  patient(id: 1) {
+    prenom
+  }
+  recherche(texte: "a") {
+    __typename
+  }
+}
+
+### e02-champ-inconnu — Erreur de validation : champ absent du schéma (requête rejetée avant exécution)
+GRAPHQL http://localhost:8080/graphql
+
+query ChampInconnu {
+  patient(id: 1) {
+    numeroSecu
+  }
+}
+
+### e03-pagination-invalide — Erreur métier : taille de page hors limites
+GRAPHQL http://localhost:8080/graphql
+
+query PaginationInvalide {
+  patients(taille: 500) {
+    infoPage { totalElements }
+  }
+}
+
+### e04-scalaire-invalide — Erreur de scalaire : date au mauvais format
+GRAPHQL http://localhost:8080/graphql
+
+query ScalaireInvalide {
+  patients(filtre: { neApres: "12/03/1948" }) {
+    infoPage { totalElements }
+  }
+}
+
+### e05-profondeur-excessive — Requête trop profonde (25 niveaux > 20) : rejetée par MaxQueryDepthInstrumentation
+GRAPHQL http://localhost:8080/graphql
+
+query TropProfond {
+  patient(id: 1) {
+    sejours {
+      patient {
+        sejours {
+          patient {
+            sejours {
+              patient {
+                sejours {
+                  patient {
+                    sejours {
+                      patient {
+                        sejours {
+                          patient {
+                            sejours {
+                              patient {
+                                sejours {
+                                  patient {
+                                    sejours {
+                                      patient {
+                                        sejours {
+                                          patient {
+                                            sejours {
+                                              patient {
+                                                sejours {
+                                                  numeroSejour
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+### e07-cout-excessif — Requête trop coûteuse (directive @cout) : rejetée avant exécution
+GRAPHQL http://localhost:8080/graphql
+
+query TropCouteuse {
+  patients(taille: 100) {
+    contenu {
+      nomAffiche
+      sejours {
+        numeroSejour
+        documents {
+          titre
+          contenu
+        }
+      }
+    }
+  }
+}
+
+### e08-scalaire-ipp-invalide — Scalaire métier IPP : format vérifié avant toute exécution
+GRAPHQL http://localhost:8080/graphql
+
+query IppInvalide {
+  patientParIpp(ipp: "12AB") {
+    nomAffiche
+  }
+}
+
+### e06-variable-manquante — Variable obligatoire non fournie
+GRAPHQL http://localhost:8080/graphql
+
+query VariableManquante($id: ID!) {
+  patient(id: $id) {
+    prenom
+  }
+}
+
+### m01-creer-patient — Création d'un patient (union ResultatPatient)
+GRAPHQL http://localhost:8080/graphql
+
+mutation CreerPatient($entree: CreerPatientInput!) {
+  creerPatient(entree: $entree) {
+    __typename
+    ... on Patient {
+      id
+      ipp
+      nomNaissance
+      nomAffiche
+      prenom
+      age
+      dateCreation
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "ipp": "00020001",
+    "nomNaissance": "Durand",
+    "prenom": "Alice",
+    "dateNaissance": "1980-04-15",
+    "sexe": "F",
+    "telephone": "0611223344"
+  }
+}
+
+### m02-creer-patient-invalide — Bean Validation : ErreurMetier VALIDATION avec un détail par champ
+GRAPHQL http://localhost:8080/graphql
+
+mutation CreerPatientInvalide {
+  creerPatient(entree: {
+    ipp: "00029999"
+    nomNaissance: "   "
+    prenom: ""
+    dateNaissance: "2099-01-01"
+    sexe: M
+  }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+### m03-creer-patient-ipp-existant — Règle métier : IPP déjà attribué
+GRAPHQL http://localhost:8080/graphql
+
+mutation IppExistant {
+  creerPatient(entree: {
+    ipp: "00010001"
+    nomNaissance: "Doublon"
+    prenom: "Jeanne"
+    dateNaissance: "1948-03-12"
+    sexe: F
+  }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+### m04-modifier-patient — Modification partielle (seuls les champs fournis)
+GRAPHQL http://localhost:8080/graphql
+
+mutation ModifierPatient($entree: ModifierPatientInput!) {
+  modifierPatient(entree: $entree) {
+    __typename
+    ... on Patient {
+      id
+      nomNaissance
+      nomUsage
+      nomAffiche
+      telephone
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "patientId": 13,
+    "nomUsage": "Martin",
+    "telephone": "0699887766"
+  }
+}
+
+### m05-admettre-patient — Admission en hospitalisation complète (union ResultatSejour)
+GRAPHQL http://localhost:8080/graphql
+
+mutation Admettre($entree: AdmissionInput!) {
+  admettrePatient(entree: $entree) {
+    __typename
+    ... on Sejour {
+      id
+      numeroSejour
+      type
+      statut
+      dateEntree
+      ufCourante {
+        code
+        libelle
+      }
+      mouvements {
+        type
+        uniteFonctionnelle {
+          code
+        }
+      }
+      patient {
+        nomAffiche
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "patientId": 13,
+    "type": "HOSPITALISATION_COMPLETE",
+    "ufCode": "3001",
+    "motif": "Douleur abdominale"
+  }
+}
+
+### m06-admettre-deja-hospitalise — Règle métier : un seul séjour hospitalier en cours par patient
+GRAPHQL http://localhost:8080/graphql
+
+mutation DejaHospitalise {
+  admettrePatient(entree: { patientId: 1, type: HOSPITALISATION_COMPLETE, ufCode: "1201" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+### m07-admettre-uf-inconnue — Ressource introuvable : UF inconnue
+GRAPHQL http://localhost:8080/graphql
+
+mutation UfInconnue($patientId: ID!) {
+  admettrePatient(entree: { patientId: $patientId, type: URGENCES, ufCode: "9999" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "patientId": 10
+}
+
+### m08-muter-patient — Mutation vers une autre UF
+GRAPHQL http://localhost:8080/graphql
+
+mutation Muter($entree: MutationPatientInput!) {
+  muterPatient(entree: $entree) {
+    __typename
+    ... on Sejour {
+      numeroSejour
+      ufCourante {
+        code
+        libelle
+      }
+      mouvements {
+        type
+        dateMouvement
+        uniteFonctionnelle {
+          code
+        }
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "sejourId": 15,
+    "ufDestination": "4101"
+  }
+}
+
+### m09-muter-meme-uf — Règle métier : mutation vers l'UF courante
+GRAPHQL http://localhost:8080/graphql
+
+mutation MemeUf {
+  muterPatient(entree: { sejourId: 3, ufDestination: "2101" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+### m10-sortir-sans-lettre — Règle métier : sortie impossible sans lettre de liaison validée
+GRAPHQL http://localhost:8080/graphql
+
+mutation SortieSansLettre($sejourId: ID!) {
+  sortirPatient(entree: { sejourId: $sejourId, modeSortie: DOMICILE }) {
+    __typename
+    ... on Sejour {
+      statut
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "sejourId": 12
+}
+
+### m11-ajouter-document — Ajout d'un document (brouillon)
+GRAPHQL http://localhost:8080/graphql
+
+mutation AjouterDocument($entree: AjoutDocumentInput!) {
+  ajouterDocument(entree: $entree) {
+    __typename
+    ... on Document {
+      id
+      type
+      titre
+      statut
+      taille
+      dateCreation
+      sejour {
+        numeroSejour
+      }
+      patient {
+        nomAffiche
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "sejourId": 15,
+    "type": "LETTRE_DE_LIAISON",
+    "titre": "Lettre de liaison de sortie",
+    "contenu": "Retour à domicile. Contrôle chez le médecin traitant à J7.",
+    "auteur": "Dr Nadia Benali"
+  }
+}
+
+### m12-valider-document — Validation d'un document
+GRAPHQL http://localhost:8080/graphql
+
+mutation Valider($entree: ValidationDocumentInput!) {
+  validerDocument(entree: $entree) {
+    __typename
+    ... on Document {
+      id
+      statut
+      dateValidation
+      validePar
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "documentId": 24,
+    "validePar": "Dr Nadia Benali"
+  }
+}
+
+### m13-sortir-patient — Sortie du patient (date explicite facultative)
+GRAPHQL http://localhost:8080/graphql
+
+mutation Sortir($entree: SortieInput!) {
+  sortirPatient(entree: $entree) {
+    __typename
+    ... on Sejour {
+      numeroSejour
+      statut
+      dateSortie
+      modeSortie
+      dureeJours
+      mouvements {
+        type
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "sejourId": 15,
+    "modeSortie": "DOMICILE"
+  }
+}
+
+### m14-sortir-sejour-clos — Règle métier : sortie d'un séjour déjà clos
+GRAPHQL http://localhost:8080/graphql
+
+mutation SejourClos {
+  sortirPatient(entree: { sejourId: 1, modeSortie: DOMICILE }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+### m15-supprimer-document — Suppression d'un brouillon (union ResultatSuppression)
+GRAPHQL http://localhost:8080/graphql
+
+mutation Supprimer($entree: SuppressionDocumentInput!) {
+  supprimerDocument(entree: $entree) {
+    __typename
+    ... on DocumentSupprime {
+      id
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "documentId": 8
+  }
+}
+
+### m16-supprimer-document-valide — Règle métier : un document validé n'est pas supprimable
+GRAPHQL http://localhost:8080/graphql
+
+mutation SupprimerValide {
+  supprimerDocument(entree: { documentId: 1 }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+### m17-document-sejour-annule — Règle métier : pas de document sur un séjour annulé
+GRAPHQL http://localhost:8080/graphql
+
+mutation DocumentSejourAnnule {
+  ajouterDocument(entree: { sejourId: 8, type: ORDONNANCE, titre: "Test", auteur: "Dr Test" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+### m18-annuler-sejour — Annulation d'un séjour
+GRAPHQL http://localhost:8080/graphql
+
+mutation Annuler($entree: AnnulationSejourInput!) {
+  annulerSejour(entree: $entree) {
+    __typename
+    ... on Sejour {
+      numeroSejour
+      statut
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "entree": {
+    "sejourId": 15
+  }
+}
+
+### m19-mutations-multiples — Plusieurs mutations dans une requête : exécutées en SÉRIE, dans l'ordre
+GRAPHQL http://localhost:8080/graphql
+
+mutation DeuxPatients($ippA: IPP!, $ippB: IPP!) {
+  premier: creerPatient(entree: { ipp: $ippA, nomNaissance: "Lopez", prenom: "Ana", dateNaissance: "1999-09-09", sexe: F }) {
+    ... on Patient {
+      id
+      ipp
+    }
+    ...Erreur
+  }
+  second: creerPatient(entree: { ipp: $ippB, nomNaissance: "Lopez", prenom: "Juan", dateNaissance: "1997-07-07", sexe: M }) {
+    ... on Patient {
+      id
+      ipp
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "ippA": "00020002",
+  "ippB": "00020003"
+}
+
+### m20-muter-date-anterieure — Règle métier : chronologie des mouvements
+GRAPHQL http://localhost:8080/graphql
+
+mutation DateAnterieure($sejourId: ID!) {
+  muterPatient(entree: { sejourId: $sejourId, ufDestination: "1202", dateMutation: "2000-01-01T00:00:00" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}
+
+{
+  "sejourId": 2
+}
+
+### m21-erreur-sans-fragment — Sans fragment sur ErreurMetier, une erreur métier donne un objet vide : toujours la sélectionner !
+GRAPHQL http://localhost:8080/graphql
+
+mutation ErreurIgnoree {
+  sortirPatient(entree: { sejourId: 1, modeSortie: DOMICILE }) {
+    ... on Sejour {
+      statut
+    }
+  }
+}
+
+### s01-tous-evenements — Subscription : tous les événements (interface + fragments inline)
+GRAPHQL ws://localhost:8080/graphql-ws
+
+subscription TousLesEvenements {
+  evenements {
+    __typename
+    type
+    horodatage
+    ... on EvenementSejour {
+      sejour {
+        id
+        numeroSejour
+        statut
+      }
+    }
+    ... on EvenementDocument {
+      document {
+        id
+        titre
+        statut
+      }
+    }
+  }
+}
+
+### s02-evenements-patient — Subscription filtrée sur un patient et des types d'événements
+GRAPHQL ws://localhost:8080/graphql-ws
+
+subscription EvenementsPatient($patientId: ID!, $types: [TypeEvenement!]) {
+  evenements(patientId: $patientId, types: $types) {
+    type
+    horodatage
+    ... on EvenementSejour {
+      sejour {
+        numeroSejour
+        statut
+      }
+    }
+  }
+}
+
+{
+  "patientId": 13,
+  "types": [
+    "ADMISSION",
+    "MUTATION",
+    "SORTIE"
+  ]
+}

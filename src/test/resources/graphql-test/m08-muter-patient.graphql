@@ -1,0 +1,37 @@
+# Mutation vers une autre UF
+# Variables :
+#   {
+#     "entree": {
+#       "sejourId": 15,
+#       "ufDestination": "4101"
+#     }
+#   }
+mutation Muter($entree: MutationPatientInput!) {
+  muterPatient(entree: $entree) {
+    __typename
+    ... on Sejour {
+      numeroSejour
+      ufCourante {
+        code
+        libelle
+      }
+      mouvements {
+        type
+        dateMouvement
+        uniteFonctionnelle {
+          code
+        }
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

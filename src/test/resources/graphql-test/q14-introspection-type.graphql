@@ -1,0 +1,19 @@
+# Introspection : structure du type Sejour
+query IntrospectionSejour {
+  __type(name: "Sejour") {
+    name
+    description
+    fields {
+      name
+      description
+      type {
+        kind
+        name
+        ofType {
+          kind
+          name
+        }
+      }
+    }
+  }
+}

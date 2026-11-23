@@ -1,0 +1,22 @@
+# Subscription filtrée sur un patient et des types d'événements
+# Variables :
+#   {
+#     "patientId": 13,
+#     "types": [
+#       "ADMISSION",
+#       "MUTATION",
+#       "SORTIE"
+#     ]
+#   }
+subscription EvenementsPatient($patientId: ID!, $types: [TypeEvenement!]) {
+  evenements(patientId: $patientId, types: $types) {
+    type
+    horodatage
+    ... on EvenementSejour {
+      sejour {
+        numeroSejour
+        statut
+      }
+    }
+  }
+}

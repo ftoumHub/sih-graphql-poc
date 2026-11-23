@@ -1,0 +1,16 @@
+# Règle métier : pas de document sur un séjour annulé
+mutation DocumentSejourAnnule {
+  ajouterDocument(entree: { sejourId: 8, type: ORDONNANCE, titre: "Test", auteur: "Dr Test" }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

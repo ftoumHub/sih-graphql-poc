@@ -1,0 +1,11 @@
+# Méta-champ __typename
+query TypeName {
+  patient(id: 1) {
+    __typename
+    id
+    sejours {
+      __typename
+      numeroSejour
+    }
+  }
+}

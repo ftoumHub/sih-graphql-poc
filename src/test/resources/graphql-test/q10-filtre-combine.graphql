@@ -1,0 +1,19 @@
+# Filtre combiné passé en variable (input object)
+# Variables :
+#   {
+#     "filtre": {
+#       "sexe": "F",
+#       "neAvant": "1970-01-01"
+#     }
+#   }
+query FiltreCombine($filtre: FiltrePatient) {
+  patients(filtre: $filtre) {
+    infoPage { totalElements }
+    contenu {
+      nomAffiche
+      prenom
+      dateNaissance
+      sexe
+    }
+  }
+}

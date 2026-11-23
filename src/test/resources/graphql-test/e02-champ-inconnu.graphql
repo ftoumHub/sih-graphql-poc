@@ -1,0 +1,6 @@
+# Erreur de validation : champ absent du schéma (requête rejetée avant exécution)
+query ChampInconnu {
+  patient(id: 1) {
+    numeroSecu
+  }
+}

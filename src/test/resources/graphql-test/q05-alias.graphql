@@ -1,0 +1,11 @@
+# Alias : deux fois le même champ avec des arguments différents
+query DeuxPatients {
+  jeanne: patient(id: 1) {
+    prenom
+    age
+  }
+  louis: patient(id: 2) {
+    prenom
+    age
+  }
+}

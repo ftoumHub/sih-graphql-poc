@@ -1,0 +1,40 @@
+# Ajout d'un document (brouillon)
+# Variables :
+#   {
+#     "entree": {
+#       "sejourId": 15,
+#       "type": "LETTRE_DE_LIAISON",
+#       "titre": "Lettre de liaison de sortie",
+#       "contenu": "Retour à domicile. Contrôle chez le médecin traitant à J7.",
+#       "auteur": "Dr Nadia Benali"
+#     }
+#   }
+mutation AjouterDocument($entree: AjoutDocumentInput!) {
+  ajouterDocument(entree: $entree) {
+    __typename
+    ... on Document {
+      id
+      type
+      titre
+      statut
+      taille
+      dateCreation
+      sejour {
+        numeroSejour
+      }
+      patient {
+        nomAffiche
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

@@ -1,0 +1,11 @@
+# Filtre sur le nom (naissance OU usage), insensible à la casse
+query FiltreNom {
+  patients(filtre: { nom: "mar" }) {
+    infoPage { totalElements }
+    contenu {
+      nomNaissance
+      nomUsage
+      prenom
+    }
+  }
+}

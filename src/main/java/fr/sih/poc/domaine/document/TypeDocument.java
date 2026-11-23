@@ -1,0 +1,11 @@
+package fr.sih.poc.domaine.document;
+
+public enum TypeDocument {
+    COMPTE_RENDU_HOSPITALISATION,
+    COMPTE_RENDU_OPERATOIRE,
+    COMPTE_RENDU_CONSULTATION,
+    COMPTE_RENDU_IMAGERIE,
+    LETTRE_DE_LIAISON,
+    ORDONNANCE,
+    RESULTAT_BIOLOGIE
+}

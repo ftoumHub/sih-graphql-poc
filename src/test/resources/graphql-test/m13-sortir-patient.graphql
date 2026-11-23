@@ -1,0 +1,33 @@
+# Sortie du patient (date explicite facultative)
+# Variables :
+#   {
+#     "entree": {
+#       "sejourId": 15,
+#       "modeSortie": "DOMICILE"
+#     }
+#   }
+mutation Sortir($entree: SortieInput!) {
+  sortirPatient(entree: $entree) {
+    __typename
+    ... on Sejour {
+      numeroSejour
+      statut
+      dateSortie
+      modeSortie
+      dureeJours
+      mouvements {
+        type
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

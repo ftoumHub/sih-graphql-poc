@@ -1,0 +1,10 @@
+# Introspection : champs dépréciés et raison de la dépréciation
+query ChampsDeprecies {
+  __type(name: "Mouvement") {
+    fields(includeDeprecated: true) {
+      name
+      isDeprecated
+      deprecationReason
+    }
+  }
+}

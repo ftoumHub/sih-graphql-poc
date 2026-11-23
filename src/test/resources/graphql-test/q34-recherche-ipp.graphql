@@ -1,0 +1,10 @@
+# Recherche par IPP (seuls les patients ont des champs demandés)
+query RechercheIpp {
+  recherche(texte: "00010008") {
+    __typename
+    ... on Patient {
+      nomAffiche
+      ipp
+    }
+  }
+}

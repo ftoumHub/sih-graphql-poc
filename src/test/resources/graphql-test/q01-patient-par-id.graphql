@@ -1,0 +1,16 @@
+# Un patient par id, avec variable
+# Variables :
+#   {
+#     "id": 1
+#   }
+query PatientParId($id: ID!) {
+  patient(id: $id) {
+    id
+    ipp
+    nomNaissance
+    prenom
+    dateNaissance
+    age
+    sexe
+  }
+}

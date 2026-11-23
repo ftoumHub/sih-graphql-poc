@@ -1,0 +1,9 @@
+# Argument de champ calculé : contenu tronqué
+query Apercu {
+  document(id: 1) {
+    titre
+    taille
+    apercu: contenu(longueurMax: 30)
+    complet: contenu
+  }
+}

@@ -1,0 +1,172 @@
+# =====================================================================
+#  Patients
+# =====================================================================
+
+extend type Query {
+    "Un patient par son identifiant technique. Null s'il n'existe pas (ce n'est pas une erreur)."
+    patient(
+        "Identifiant technique du patient."
+        id: ID!
+    ): Patient
+
+    "Un patient par son IPP. Null s'il n'existe pas."
+    patientParIpp(
+        "IPP du patient (8 chiffres)."
+        ipp: IPP!
+    ): Patient
+
+    """
+    Recherche multicritère paginée des patients, triée par nom de naissance puis prénom.
+
+    ```graphql
+    query {
+      patients(filtre: { nom: "mar", sexe: F }, page: 0, taille: 10) {
+        contenu { id nomAffiche prenom age }
+        infoPage { totalElements estDernierePage }
+      }
+    }
+    ```
+
+    Erreur `PAGINATION_INVALIDE` (dans `errors`) si `taille` sort de [1, 100].
+    """
+    patients(
+        "Critères, combinés en ET. Tous les patients si absent."
+        filtre: FiltrePatient
+        "Numéro de page, à partir de 0."
+        page: Int = 0
+        "Nombre d'éléments par page, entre 1 et 100."
+        taille: Int = 20
+    ): PatientPage! @cout(multiplicateur: "taille")
+}
+
+type Mutation {
+    """
+    Crée un patient. Le nom de naissance et le nom d'usage sont enregistrés en majuscules.
+
+    Erreurs possibles : `VALIDATION`, `IPP_DEJA_UTILISE`, `DATE_NAISSANCE_FUTURE`.
+
+    ```graphql
+    mutation {
+      creerPatient(entree: { ipp: "00020001", nomNaissance: "Durand", prenom: "Alice",
+                             dateNaissance: "1980-04-15", sexe: F }) {
+        __typename
+        ... on Patient { id ipp }
+        ... on ErreurMetier { code message details { champ message } }
+      }
+    }
+    ```
+    """
+    creerPatient(entree: CreerPatientInput!): ResultatPatient!
+
+    """
+    Modifie l'identité d'un patient. Seuls les champs fournis sont modifiés.
+
+    Erreurs possibles : `VALIDATION`, `RESSOURCE_INTROUVABLE`.
+    """
+    modifierPatient(entree: ModifierPatientInput!): ResultatPatient!
+}
+
+"Résultat d'une mutation sur un patient : le patient à jour, ou l'erreur métier."
+union ResultatPatient = Patient | ErreurMetier
+
+"Sexe administratif du patient."
+enum Sexe {
+    "Masculin"
+    M
+    "Féminin"
+    F
+    "Indéterminé"
+    I
+}
+
+"Personne prise en charge par l'établissement, identifiée par son IPP."
+type Patient implements Noeud {
+    "Identifiant technique du patient."
+    id: ID!
+    "Identifiant permanent du patient dans l'établissement."
+    ipp: IPP!
+    "Nom de naissance, en majuscules."
+    nomNaissance: String!
+    "Nom d'usage (ex. nom d'épouse), en majuscules. Null s'il n'y en a pas."
+    nomUsage: String
+    "Nom à afficher : le nom d'usage s'il existe, sinon le nom de naissance."
+    nomAffiche: String!
+    "Prénom."
+    prenom: String!
+    "Date de naissance."
+    dateNaissance: Date!
+    "Âge en années révolues, calculé à la date du jour."
+    age: Int!
+    "Vrai si le patient a moins de 18 ans aujourd'hui."
+    estMineur: Boolean!
+    "Sexe administratif."
+    sexe: Sexe!
+    "Téléphone de contact. Donnée personnelle : ne la demander que si nécessaire."
+    telephone: Telephone
+    "Date et heure de création du patient dans le système."
+    dateCreation: DateHeure!
+
+    "Tous les séjours du patient, du plus récent au plus ancien. Chargés en lot (une requête SQL quel que soit le nombre de patients)."
+    sejours: [Sejour!]! @cout(cardinalite: 5)
+    "Séjour en cours le plus récent, null s'il n'y en a pas. Résolu patient par patient : à éviter sur de longues listes."
+    sejourEnCours: Sejour @cout(valeur: 5)
+    "Documents du patient, tous séjours confondus, du plus récent au plus ancien."
+    documents(
+        "Ne renvoyer que les documents de ce type. Tous les types si absent."
+        type: TypeDocument
+    ): [Document!]! @cout(valeur: 5, cardinalite: 10)
+}
+
+"Une page de patients."
+type PatientPage {
+    "Les patients de la page."
+    contenu: [Patient!]!
+    "Métadonnées de pagination."
+    infoPage: InfoPage!
+}
+
+"Critères de recherche de patients, tous facultatifs et combinés en ET."
+input FiltrePatient {
+    "Fragment du nom de naissance OU du nom d'usage, insensible à la casse. Ex. `mar`."
+    nom: String
+    "Fragment du prénom, insensible à la casse."
+    prenom: String
+    "Sexe administratif."
+    sexe: Sexe
+    "Né(e) le ou après cette date (borne incluse)."
+    neApres: Date
+    "Né(e) le ou avant cette date (borne incluse)."
+    neAvant: Date
+}
+
+"Données de création d'un patient."
+input CreerPatientInput {
+    "IPP attribué par le bureau des admissions. Doit être unique."
+    ipp: IPP!
+    "Nom de naissance, 100 caractères maximum, non vide."
+    nomNaissance: String!
+    "Nom d'usage éventuel, 100 caractères maximum."
+    nomUsage: String
+    "Prénom, 100 caractères maximum, non vide."
+    prenom: String!
+    "Date de naissance, strictement dans le passé."
+    dateNaissance: Date!
+    "Sexe administratif."
+    sexe: Sexe!
+    "Téléphone de contact."
+    telephone: Telephone
+}
+
+"Modification partielle de l'identité d'un patient : seuls les champs fournis sont modifiés."
+input ModifierPatientInput {
+    "Patient à modifier."
+    patientId: ID!
+    "Nouveau nom de naissance, 1 à 100 caractères."
+    nomNaissance: String
+    "Nouveau nom d'usage, 1 à 100 caractères."
+    nomUsage: String
+    "Nouveau prénom, 1 à 100 caractères."
+    prenom: String
+    "Nouveau téléphone."
+    telephone: Telephone
+}

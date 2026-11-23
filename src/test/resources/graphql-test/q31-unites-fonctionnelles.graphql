@@ -1,0 +1,16 @@
+# Référentiel des UF avec occupation et patients présents
+query UnitesFonctionnelles {
+  unitesFonctionnelles {
+    code
+    libelle
+    service
+    capacite
+    tauxOccupation
+    sejoursEnCours {
+      numeroSejour
+      patient {
+        nomAffiche
+      }
+    }
+  }
+}

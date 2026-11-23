@@ -1,0 +1,14 @@
+# Séjour par numéro (NDA)
+# Variables :
+#   {
+#     "numero": "2026000001"
+#   }
+query SejourParNumero($numero: String!) {
+  sejourParNumero(numero: $numero) {
+    id
+    type
+    statut
+    modeSortie
+    dureeJours
+  }
+}

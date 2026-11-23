@@ -1,0 +1,8 @@
+# Sans fragment sur ErreurMetier, une erreur métier donne un objet vide : toujours la sélectionner !
+mutation ErreurIgnoree {
+  sortirPatient(entree: { sejourId: 1, modeSortie: DOMICILE }) {
+    ... on Sejour {
+      statut
+    }
+  }
+}

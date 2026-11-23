@@ -1,0 +1,45 @@
+# Admission en hospitalisation complète (union ResultatSejour)
+# Variables :
+#   {
+#     "entree": {
+#       "patientId": 13,
+#       "type": "HOSPITALISATION_COMPLETE",
+#       "ufCode": "3001",
+#       "motif": "Douleur abdominale"
+#     }
+#   }
+mutation Admettre($entree: AdmissionInput!) {
+  admettrePatient(entree: $entree) {
+    __typename
+    ... on Sejour {
+      id
+      numeroSejour
+      type
+      statut
+      dateEntree
+      ufCourante {
+        code
+        libelle
+      }
+      mouvements {
+        type
+        uniteFonctionnelle {
+          code
+        }
+      }
+      patient {
+        nomAffiche
+      }
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

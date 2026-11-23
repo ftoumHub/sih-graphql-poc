@@ -1,0 +1,22 @@
+# Règle métier : IPP déjà attribué
+mutation IppExistant {
+  creerPatient(entree: {
+    ipp: "00010001"
+    nomNaissance: "Doublon"
+    prenom: "Jeanne"
+    dateNaissance: "1948-03-12"
+    sexe: F
+  }) {
+    __typename
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

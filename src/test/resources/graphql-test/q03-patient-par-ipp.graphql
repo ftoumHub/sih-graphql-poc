@@ -1,0 +1,9 @@
+# Recherche par IPP (argument littéral) et champ calculé nomAffiche
+query PatientParIpp {
+  patientParIpp(ipp: "00010003") {
+    nomNaissance
+    nomUsage
+    nomAffiche
+    prenom
+  }
+}

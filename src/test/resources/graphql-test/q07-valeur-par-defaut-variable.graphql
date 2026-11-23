@@ -1,0 +1,12 @@
+# Variable avec valeur par défaut
+query PremiersPatients($taille: Int = 3) {
+  patients(taille: $taille) {
+    contenu {
+      nomAffiche
+      prenom
+    }
+    infoPage {
+      taille
+    }
+  }
+}

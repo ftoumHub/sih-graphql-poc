@@ -1,0 +1,6 @@
+# Erreur métier : taille de page hors limites
+query PaginationInvalide {
+  patients(taille: 500) {
+    infoPage { totalElements }
+  }
+}

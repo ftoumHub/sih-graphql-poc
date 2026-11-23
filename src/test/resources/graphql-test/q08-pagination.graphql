@@ -1,0 +1,22 @@
+# Pagination : page 1, 5 éléments par page
+# Variables :
+#   {
+#     "page": 1,
+#     "taille": 5
+#   }
+query Pagination($page: Int!, $taille: Int!) {
+  patients(page: $page, taille: $taille) {
+    infoPage {
+      page
+      taille
+      totalElements
+      totalPages
+      estDernierePage
+    }
+    contenu {
+      id
+      nomAffiche
+      prenom
+    }
+  }
+}

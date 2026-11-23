@@ -1,0 +1,25 @@
+# Suppression d'un brouillon (union ResultatSuppression)
+# Variables :
+#   {
+#     "entree": {
+#       "documentId": 8
+#     }
+#   }
+mutation Supprimer($entree: SuppressionDocumentInput!) {
+  supprimerDocument(entree: $entree) {
+    __typename
+    ... on DocumentSupprime {
+      id
+    }
+    ...Erreur
+  }
+}
+
+fragment Erreur on ErreurMetier {
+  code
+  message
+  details {
+    champ
+    message
+  }
+}

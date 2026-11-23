@@ -1,0 +1,6 @@
+# Scalaire métier IPP : format vérifié avant toute exécution
+query IppInvalide {
+  patientParIpp(ipp: "12AB") {
+    nomAffiche
+  }
+}
