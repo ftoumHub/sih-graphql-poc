@@ -1,6 +1,7 @@
-# Filtre sur le nom (naissance OU usage), insensible à la casse
+# Filtre sur le nom (naissance OU usage), insensible à la casse.
+# "ier" trouve FOURNIER par son nom de naissance et BONNET par son nom d'usage (MERCIER).
 query FiltreNom {
-  patients(filtre: { nom: "mar" }) {
+  patients(filtre: { nom: "ier" }) {
     infoPage { totalElements }
     contenu {
       nomNaissance

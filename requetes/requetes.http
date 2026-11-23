@@ -132,7 +132,7 @@ query Pagination($page: Int!, $taille: Int!) {
 GRAPHQL http://localhost:8080/graphql
 
 query FiltreNom {
-  patients(filtre: { nom: "mar" }) {
+  patients(filtre: { nom: "ier" }) {
     infoPage { totalElements }
     contenu {
       nomNaissance
@@ -248,14 +248,16 @@ query IntrospectionEnum {
   }
 }
 
-### q16-introspection-racines — Introspection : toutes les opérations disponibles
+### q16-introspection-racines — Introspection : les opérations d'un type racine
 GRAPHQL http://localhost:8080/graphql
 
-query OperationsDisponibles {
-  __schema {
-    queryType { fields { name } }
-    mutationType { fields { name } }
-    subscriptionType { fields { name } }
+# graphql-java refuse une introspection qui demande __Type.fields plus d'une fois
+# (protection « good faith » contre les requêtes abusives) : on interroge donc
+# un type racine à la fois, passé en variable (Query, Mutation ou Subscription).
+query OperationsDuTypeRacine($type: String! = "Query") {
+  __type(name: $type) {
+    name
+    fields { name }
   }
 }
 

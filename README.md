@@ -66,6 +66,9 @@ docs/schema-bdd.md                   diagramme de la base de données (Mermaid)
 
 ## Statut
 
-Le SQL Liquibase a été exécuté sur PostgreSQL 16, et le schéma ainsi que toutes les requêtes du catalogue
-ont été validés avec graphql-js. Le code Java de production a été compilé contre des interfaces simulées des
-bibliothèques. **Le build Maven complet n'a pas encore été exécuté** : lance `mvn verify` en premier.
+**`mvn verify` passe : 70 tests, 0 échec** (Java 17, Maven 3.8.8, Docker 29).
+
+- Testcontainers est fixé en **1.21.4** dans le `pom.xml` : la version 1.21.3 fournie par Spring Boot 3.5.7
+  utilise l'API Docker 1.32, refusée par Docker 29 et plus (minimum 1.44).
+- graphql-java refuse une introspection qui demande `__Type.fields` plus d'une fois par requête (protection
+  « good faith ») : c'est pourquoi `q16-introspection-racines` interroge un type racine à la fois.

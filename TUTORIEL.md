@@ -908,7 +908,7 @@ correspondent alors aux objets créés.
 | `q13-typename` | Méta-champ __typename |
 | `q14-introspection-type` | Introspection : structure du type Sejour |
 | `q15-introspection-enum` | Introspection : valeurs d'une énumération |
-| `q16-introspection-racines` | Introspection : toutes les opérations disponibles |
+| `q16-introspection-racines` | Introspection : les opérations d'un type racine |
 | `q17-champs-deprecies` | Introspection : champs dépréciés et raison de la dépréciation |
 
 **Navigation dans le graphe**

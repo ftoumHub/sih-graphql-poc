@@ -83,7 +83,7 @@ class RequetesLectureTest extends GraphQlTestBase {
         void q09_le_filtre_nom_cherche_dans_le_nom_de_naissance_et_le_nom_d_usage() {
             tester.documentName("q09-filtre-nom").execute()
                     .path("patients.contenu[*].nomNaissance").entityList(String.class)
-                    .containsExactly("BONNET", "MARTIN");
+                    .containsExactly("BONNET", "FOURNIER"); // BONNET via son nom d'usage MERCIER
         }
 
         @Test
@@ -132,10 +132,11 @@ class RequetesLectureTest extends GraphQlTestBase {
             tester.documentName("q15-introspection-enum").execute()
                     .path("__type.enumValues").entityList(Map.class).hasSize(7);
 
-            GraphQlTester.Response racines = tester.documentName("q16-introspection-racines").execute();
-            racines.path("__schema.mutationType.fields[*].name").entityList(String.class)
+            tester.documentName("q16-introspection-racines").variable("type", "Mutation").execute()
+                    .path("__type.fields[*].name").entityList(String.class)
                     .contains("creerPatient", "admettrePatient", "sortirPatient", "validerDocument");
-            racines.path("__schema.subscriptionType.fields[*].name").entityList(String.class)
+            tester.documentName("q16-introspection-racines").variable("type", "Subscription").execute()
+                    .path("__type.fields[*].name").entityList(String.class)
                     .containsExactly("evenements");
         }
 

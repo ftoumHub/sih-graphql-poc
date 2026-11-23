@@ -1,8 +1,10 @@
-# Introspection : toutes les opérations disponibles
-query OperationsDisponibles {
-  __schema {
-    queryType { fields { name } }
-    mutationType { fields { name } }
-    subscriptionType { fields { name } }
+# Introspection : les opérations d'un type racine
+# graphql-java refuse une introspection qui demande __Type.fields plus d'une fois
+# (protection « good faith » contre les requêtes abusives) : on interroge donc
+# un type racine à la fois, passé en variable (Query, Mutation ou Subscription).
+query OperationsDuTypeRacine($type: String! = "Query") {
+  __type(name: $type) {
+    name
+    fields { name }
   }
 }

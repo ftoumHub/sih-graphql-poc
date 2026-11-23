@@ -20,6 +20,8 @@
     <properties>
         <java.version>17</java.version>
         <vavr.version>0.10.4</vavr.version>
+        <!-- 1.21.3 (fourni par Spring Boot 3.5.7) parle l'API Docker 1.32, refusée par Docker 29+ (minimum 1.44) -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencies>
