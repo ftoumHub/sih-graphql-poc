@@ -1,0 +1,94 @@
+# Site de documentation publié sur GitHub Pages (workflow .github/workflows/pages.yml).
+# Prévisualisation locale :
+#   bash site/assembler.sh && pip install -r site/requirements.txt && mkdocs serve
+site_name: POC GraphQL – SIH
+site_description: Tutoriel GraphQL avec Spring Boot sur un mini système d'information hospitalier
+site_url: https://ftoumhub.github.io/sih-graphql-poc/
+repo_url: https://github.com/ftoumHub/sih-graphql-poc
+repo_name: ftoumHub/sih-graphql-poc
+edit_uri: ""
+
+# Sources assemblées par site/assembler.sh (README, TUTORIEL, docs/, requetes/ANALYSE.md)
+docs_dir: .site-src
+site_dir: .site
+
+nav:
+  - Accueil: index.md
+  - Tutoriel: TUTORIEL.md
+  - Comprendre:
+      - Lexique GraphQL: docs/lexique-graphql.md
+      - DataFetcher, DataLoader et Repository: docs/dataloader-datafetcher.md
+      - Conception des requêtes: requetes/ANALYSE.md
+  - Schémas:
+      - Schéma GraphQL: docs/schema-graphql.md
+      - Base de données: docs/schema-bdd.md
+  - Présentation:
+      - Diaporama: https://ftoumhub.github.io/sih-graphql-poc/slides/
+      - Texte de la présentation: docs/presentation-graphql.md
+      - Notes de l'orateur: docs/presentation-graphql-notes-orateur.md
+
+theme:
+  name: material
+  language: fr
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Passer en mode sombre
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Passer en mode clair
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+
+plugins:
+  - search:
+      lang: fr
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      # Ancres au format GitHub (accents conservés) : les liens #… écrits pour GitHub restent valides.
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+# Le README pointe aussi vers des fichiers du code (src/, requetes/*.http) absents du site :
+# on les signale sans faire échouer le build.
+validation:
+  links:
+    not_found: info
+    unrecognized_links: info

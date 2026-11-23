@@ -1,0 +1,70 @@
+# Publie la documentation (MkDocs Material + diaporama Marp) sur GitHub Pages
+# à chaque push sur main. Prérequis (une seule fois) : Settings → Pages → Source = « GitHub Actions ».
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois ; on ne coupe pas un déploiement en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Construction du site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: site/requirements.txt
+
+      - name: Installation de MkDocs Material
+        run: pip install -r site/requirements.txt
+
+      - name: Assemblage des sources
+        run: bash site/assembler.sh
+
+      - name: Construction du site
+        run: mkdocs build
+
+      - name: Node.js (pour Marp)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Diaporama Marp
+        run: npx --yes @marp-team/marp-cli@4.5.1 docs/presentation-graphql.md --html -o .site/slides/index.html
+
+      - name: Configuration de Pages
+        uses: actions/configure-pages@v5
+
+      - name: Envoi du site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .site
+
+  deploy:
+    name: Déploiement
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - name: Déploiement sur GitHub Pages
+        id: deploiement
+        uses: actions/deploy-pages@v4

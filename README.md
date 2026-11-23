@@ -5,6 +5,8 @@ patients, séjours (et mouvements), documents médicaux, unités fonctionnelles.
 
 ➡️ **Le tutoriel complet est dans [TUTORIEL.md](TUTORIEL.md).**
 
+🌐 Toute la documentation en ligne (diagrammes, recherche, diaporama) : https://ftoumhub.github.io/sih-graphql-poc/
+
 📖 Vocabulaire GraphQL / Spring for GraphQL (`@SchemaMapping`, `@cout`, scalaires…) : [docs/lexique-graphql.md](docs/lexique-graphql.md).
 
 🔄 DataFetcher, DataLoader et Repository (N+1, batch loading, filtrage des champs) : [docs/dataloader-datafetcher.md](docs/dataloader-datafetcher.md).
